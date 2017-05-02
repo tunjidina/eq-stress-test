@@ -6,8 +6,10 @@ This project will read the weights file for constituents, download historical pr
 Once daily return series are obtained, [portfolio beta](http://www.investopedia.com/terms/b/beta.asp) will be used for stress testing.
 
 Results are currently outputted to a styled webpage which is then converted to a pdf (yes, majority of the investment managers are still relying on pdf)
- 
-Dependencies:
+
+-----
+
+#### Dependencies:
 
 `pip install -r requirements.txt`
 

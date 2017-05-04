@@ -7,11 +7,11 @@ def parse_args():
     :return: args
     """
     parser = ArgumentParser()
-    parser.add_argument("--weights_file")
-    parser.add_argument("--lookback_years")
-    parser.add_argument("--report_template_path")
-    parser.add_argument("--report_target_path")
-    parser.add_argument("--db_con_string")
+    parser.add_argument("--weights_file", default="./weights.csv")
+    parser.add_argument("--lookback_years", default=5)
+    parser.add_argument("--report_template_path", default="./template/report_template.html")
+    parser.add_argument("--report_target_path", default="./report/report.pdf")
+    parser.add_argument("--db_con_string", default=None)
     args = parser.parse_args()
     return args
 

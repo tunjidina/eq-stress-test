@@ -1,4 +1,9 @@
+import re
+from pandas import DataFrame
+from datetime import datetime
 from sqlalchemy import create_engine
+
+TEMP_TABLE_PATTERN = re.compile("^temp_")
 
 
 def get_engine(db_name="eq_stress_test.db", username=None, pswd=None, port=None,
@@ -14,15 +19,20 @@ def get_engine(db_name="eq_stress_test.db", username=None, pswd=None, port=None,
     :return: SQLAlchemy DB Engine
     :raise NameError: when db_type or db_name is None
     """
-    conn_str = "<db_type>://<username>:<pswd>@<hostname>:<port>/<db_name>"
+    if db_type == "sqlite":
+        conn_str = "<db_type>://<username>:<pswd>@<hostname>:<port>/<db_name>"
+    else:
+        conn_str = "<db_type>://<username>:<pswd>@<hostname>:<port>"
 
     if (username is None and port is None):
         conn_str = "<db_type>://<hostname>:<port>/<db_name>"
+    else:
+        conn_str = conn_str.replace("<username>", username).replace("<pswd>", pswd)
 
     if port is None:
         conn_str = "<db_type>://<hostname>/<db_name>"
     else:
-        conn_str = conn_str.replace("<port>", port)
+        conn_str = conn_str.replace("<port>", str(port))
 
     if hostname is None:
         conn_str = conn_str.replace("<hostname>","")
@@ -36,9 +46,141 @@ def get_engine(db_name="eq_stress_test.db", username=None, pswd=None, port=None,
     else:
         conn_str = conn_str.replace("<db_type>", db_type)
 
-    if db_name is None:
+    if db_name is None and db_type == "sqlite":
         raise NameError("db_name cannot be None")
     else:
         conn_str = conn_str.replace("<db_name>", db_name)
 
     return create_engine(conn_str)
+
+
+def get_postgres_engine():
+    db_type = "postgres"
+    db_name = os.environ["PGRES_DBNAME"]
+    username = os.environ["PGRES_USER"]
+    pswd = os.environ["PGRES_PSWD"]
+    port = os.environ["PGRES_PORT"]
+    host = os.environ["PGRES_HOST"]
+    return get_engine(db_name, username, pswd, port, hostname=host, db_type=db_type)
+
+
+def setup_db_tables(drop_pre_init=False):
+    db_type, username, pswd, port, host, db_type = ("postgres", None, None, None, None)
+    try:
+        db_name = os.environ["PGRES_DBNAME"]
+        username = os.environ["PGRES_USER"]
+        pswd = os.environ["PGRES_PSWD"]
+        port = os.environ["PGRES_PORT"]
+        host = os.environ["PGRES_HOST"]
+    except:
+        print("Make sure to use setup env variables")
+    db_engine = get_engine(db_name, username, pswd, port, db_type=db_type, hostname=host)
+
+    if drop_pre_init:
+        q = """
+            DROP TABLE IF EXISTS eq_prices;
+            DROP TABLE IF EXISTS daily_consituent_returns;
+            DROP TABLE IF EXISTS portfolio_returns;
+            DROP TABLE IF EXISTS portfolio_beta;
+        """
+
+    q = """
+        CREATE TABLE eq_prices (
+            ticker varchar (10),
+            price_date date,
+            price numeric,
+            source varchar (10)
+        );
+        
+        CREATE TABLE daily_constituent_returns (
+            ticker varchar (10),
+            return_date date,
+            price_ret numeric
+        );
+        
+        CREATE TABLE portfolio_weights (
+            portfolio_name varchar (10),
+            ticker varchar(10),
+            weight numeric,
+            start_date date,
+            end_date date
+        );
+        
+        CREATE TABLE portfolio_returns (
+            portfolio_name varchar (10),
+            return_date date,
+            pf_ret numeric
+        );
+        
+        CREATE TABLE portfolio_beta (
+            portfolio_name varchar (10),
+            date date,
+            beta numeric
+        );
+    """
+    execute_sql(db_engine, q)
+
+
+def insert_temp_price_table(db, tbl_name, price_tbl, debug=True):
+    q = """
+        INSERT INTO {_price_tbl} (ticker, price_date, price, source)
+        SELECT ticker, price_date, price, source
+        FROM {_temp_tbl_name}
+    """
+    p = {
+        "_price_tbl": price_tbl,
+        "_temp_tbl_name": tbl_name
+    }
+
+    execute_sql(db, q, p, debug)
+
+
+def apply_params(query, params):
+    """
+    
+    :param query: 
+    :param params: 
+    :return: 
+    """
+    # TODO: add clauses for different types of datatypes so SQL statement is acceptable
+    statement = query.format(**params)
+    return statement
+
+
+def execute_sql(db, query, params={}, debug=False):
+    """
+    
+    :param db: 
+    :param query: 
+    :param params: 
+    :param debug: 
+    :return: 
+    """
+    statement = apply_params(query, params)
+    if debug:
+        print(statement)
+    return db.execute(statement)
+
+
+def read_select(db, query, params={}, debug=False, in_df=True):
+    res = execute_sql(db, query, params, debug)
+    data = res.fetchall()
+    col_names = res.keys()
+    df = DataFrame.from_records(data, columns=col_names)
+    return df
+
+
+def drop_temp_table(db, tbl_name, debug=False):
+    if not TEMP_TABLE_PATTERN.match(tbl_name):
+        print("Not a temp table")
+    else:
+        q = "DROP TABLE IF EXISTS {_tbl_name}"
+        p = {"_tbl_name": tbl_name}
+        execute_sql(db, q, p, debug)
+
+
+def get_temptable():
+    """
+    :return: temptable name
+    """
+    return "temp_" + datetime.now().strftime("%m$s")

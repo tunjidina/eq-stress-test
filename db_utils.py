@@ -1,10 +1,13 @@
+import os
 import re
 from pandas import DataFrame
 from datetime import datetime
 from sqlalchemy import create_engine
 
-TEMP_TABLE_PATTERN = re.compile("^temp_")
+from utils import stringify
 
+TEMP_TABLE_PATTERN = re.compile("^temp_")
+TABLE_PAT = re.compile("(<TBL:.*>)")
 
 def get_engine(db_name="eq_stress_test.db", username=None, pswd=None, port=None,
                db_type="sqlite", hostname="localhost"):
@@ -79,10 +82,13 @@ def setup_db_tables(drop_pre_init=False):
     if drop_pre_init:
         q = """
             DROP TABLE IF EXISTS eq_prices;
-            DROP TABLE IF EXISTS daily_consituent_returns;
+            DROP TABLE IF EXISTS daily_constituent_returns;
+            DROP TABLE IF EXISTS portfolio_weights;
             DROP TABLE IF EXISTS portfolio_returns;
             DROP TABLE IF EXISTS portfolio_beta;
+            DROP TABLE IF EXISTS stress_scenarios;
         """
+        execute_sql(db, q, debug=True)
 
     q = """
         CREATE TABLE eq_prices (
@@ -101,9 +107,7 @@ def setup_db_tables(drop_pre_init=False):
         CREATE TABLE portfolio_weights (
             portfolio_name varchar (10),
             ticker varchar(10),
-            weight numeric,
-            start_date date,
-            end_date date
+            weight numeric
         );
         
         CREATE TABLE portfolio_returns (
@@ -117,15 +121,20 @@ def setup_db_tables(drop_pre_init=False):
             date date,
             beta numeric
         );
+        
+        CREATE TABLE stress_scenarios (
+            scenario_name varchar (20),
+            market_up_down varchar ()
+        );
     """
     execute_sql(db_engine, q)
 
 
 def insert_temp_price_table(db, tbl_name, price_tbl, debug=True):
     q = """
-        INSERT INTO {_price_tbl} (ticker, price_date, price, source)
+        INSERT INTO <TBL:eq_prices> (ticker, price_date, price, source)
         SELECT ticker, price_date, price, source
-        FROM {_temp_tbl_name}
+        FROM <TBL:{_temp_tbl_name}>
     """
     p = {
         "_price_tbl": price_tbl,
@@ -135,6 +144,19 @@ def insert_temp_price_table(db, tbl_name, price_tbl, debug=True):
     execute_sql(db, q, p, debug)
 
 
+def insert_temp_ret_table(db, temptbl_name, returns_tbl, debug=True):
+    q = """
+        INSERT INTO <TBL:{_returns_tbl}> (ticker, return_date, price_ret)
+        SELECT ticker, return_date, price_ret
+        FROM <TBL:{_temptbl_name}>
+    """
+    p = {
+        "_returns_tbl": returns_tbl,
+        "_temptbl_name": temptbl_name
+    }
+    return execute_sql(db, q, p, debug)
+
+
 def apply_params(query, params):
     """
     
@@ -142,9 +164,32 @@ def apply_params(query, params):
     :param params: 
     :return: 
     """
-    # TODO: add clauses for different types of datatypes so SQL statement is acceptable
+    for key, val in params.items():
+        if type(val) == str:
+            params[key] = stringify(val)
+        elif type(val) == list:
+            if type(val[0]) == int or type(val[0]) == float:
+                params[key] = stringify(val, is_list=True, int_list=True)
+            else:
+                params[key] = stringify(val, is_list=True)
     statement = query.format(**params)
     return statement
+
+
+def norm_q(query, params):
+    groups = TABLE_PAT.findall(query)
+    if len(groups) > 0:
+        for g in groups:
+            tablename = g.replace("<","").replace(">","").split(":")[1]
+            # _ if the tablename is passed as a variable remove formatting
+            if "{" in tablename:
+                tablename = tablename.replace("{", "").replace("}", "")
+                tablename_to_be_used = params[tablename]
+                del params[tablename]
+            else:
+                tablename_to_be_used = tablename
+            query = query.replace(g, tablename_to_be_used)
+    return query
 
 
 def execute_sql(db, query, params={}, debug=False):
@@ -156,7 +201,8 @@ def execute_sql(db, query, params={}, debug=False):
     :param debug: 
     :return: 
     """
-    statement = apply_params(query, params)
+    statement = norm_q(query, params)
+    statement = apply_params(statement, params)
     if debug:
         print(statement)
     return db.execute(statement)
@@ -174,7 +220,7 @@ def drop_temp_table(db, tbl_name, debug=False):
     if not TEMP_TABLE_PATTERN.match(tbl_name):
         print("Not a temp table")
     else:
-        q = "DROP TABLE IF EXISTS {_tbl_name}"
+        q = "DROP TABLE IF EXISTS <TBL:{_tbl_name}>"
         p = {"_tbl_name": tbl_name}
         execute_sql(db, q, p, debug)
 
@@ -183,4 +229,4 @@ def get_temptable():
     """
     :return: temptable name
     """
-    return "temp_" + datetime.now().strftime("%m$s")
+    return "temp_" + datetime.now().strftime("%m%s")

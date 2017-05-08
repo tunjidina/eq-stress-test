@@ -7,11 +7,10 @@ def parse_args():
     :return: args
     """
     parser = ArgumentParser()
+    parser.add_argument("--portfolio_name", default="TEST_PF")
     parser.add_argument("--weights_file", default="./weights.csv")
-    parser.add_argument("--lookback_years", default=5)
     parser.add_argument("--report_template_path", default="./template/report_template.html")
     parser.add_argument("--report_target_path", default="./report/report.pdf")
-    parser.add_argument("--db_con_string", default=None)
     args = parser.parse_args()
     return args
 
@@ -19,11 +18,9 @@ def run_stress_test():
     args = parse_args()
 
     weights_path = args.weights_file
-    history = args.lookback_years
-    # _ in memory db will be used if no db available
-    sql_alchemy_con_str = args.db_con_string
+    portfolio_name = args.portfolio_name
 
-    pf = Portfolio(weights_path, history, sql_alchemy_con_str)
+    pf = Portfolio(portfolio_name, weights_path)
 
     pf.calc_returns()
     pf.calc_benchmark_returns()

@@ -6,7 +6,7 @@ Long/Short Equity Portfolio
 """
 
 import pandas as pd
-from db_utils import get_postgres_engine, get_temptable, drop_temp_table, insert_weights
+from db_utils import get_postgres_engine, get_temptable, drop_temp_table
 from download import load_prices
 from attribution import calc_daily_constituent_returns,\
                         calc_daily_portfolio_returns
@@ -42,19 +42,19 @@ class Portfolio:
         tmptbl = get_temptable()
         weights.to_sql(tmptbl, self.db)
         insert_weights(self.db, tmptbl, self.portfolio_name)
-        drop_temp_table(tmptbl)
+        drop_temp_table(self.db, tmptbl)
 
         # _ store weights on class for convenience
         self.weights = weights
         self.constituents = weights.ticker.tolist()
 
-    def load_prices(self):
+    def download_prices(self):
         # _ load prices into db
-        load_prices(self.constituents)
+        load_prices(self.db, self.constituents)
 
     def calc_returns(self):
-        self.constituent_returns = calc_daily_constituent_returns(self.constituents, self.db)
-        self.portfolio_returns = calc_daily_portfolio_returns(self.constituents, self.weights)
+        calc_daily_constituent_returns(self.constituents, self.db)
+        calc_daily_portfolio_returns(self.portfolio_name, self.db)
 
     def calc_portfolio_beta(self):
         pass

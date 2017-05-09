@@ -86,4 +86,7 @@ def load_prices(db, tickers):
             continue
         else:
             cur_prices = download_yahoo_prices(ticker)
-            insert_prices_to_db(db, cur_prices, ticker)
+            if cur_prices is None:
+                continue
+            else:
+                insert_prices_to_db(db, cur_prices, ticker)

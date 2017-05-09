@@ -1,7 +1,8 @@
 from db_utils import read_select, get_temptable,\
                      insert_temp_ret_table, drop_temp_table
-from weights import get_portfolio_weights
+from weights import get_portfolio_weights, get_single_ticker_weight
 from pandas import DataFrame
+import pandas as pd
 
 def load_constituent_prices(ticker, db):
     q = """
@@ -56,24 +57,53 @@ def calc_daily_portfolio_returns(portfolio_name, db):
     weights = get_portfolio_weights(portfolio_name, db)
 
     # _ get constituent returns
-    constituent_rets = get_portfolio_returns(portfolio_name, db)
+    # _ build a giant frame and merge it
+    constituents = weights.ticker.tolist()
+    adj_returns = {}
+    for ticker in constituents:
+        # _ calculate return contribution for each constituent
+        print(ticker)
+        _ticker_return = get_ticker_returns(ticker, db)
+        _ticker_weight = get_single_ticker_weight(portfolio_name, ticker, db)
+        if (_ticker_return is not None and _ticker_weight is not None):
+            _adj_ret = _ticker_return * _ticker_weight
+        adj_returns[ticker] = _adj_ret
 
-    # _ calculate return contribution for each constituent
+    # _ clean-up frame
+    portfolio_returns = DataFrame(adj_returns)
+    portfolio_returns.fillna(0, inplace=True)
 
     # _ aggregate on the portfolio
-    portfolio_returns = []
-    return portfolio_returns
+    portfolio_returns_agg = portfolio_returns.sum(axis=1)
+    portfolio_returns_agg = portfolio_returns_agg.reset_index()
+    portfolio_returns_agg.columns = ["return_date", "price_ret"]
+    portfolio_returns_agg.loc[:, "portfolio_name"] = portfolio_name
+
+    # _ store in db
+    temptbl = get_temptable()
+    try:
+        portfolio_returns_agg.to_sql(temptbl, db)
+        insert_temp_ret_table(db, temptbl, returns_tbl="portfolio_returns", is_pf=True)
+    except:
+        print("Error loading portfolio returns for {}".format(portfolio_name))
+    drop_temp_table(db, temptbl, debug=True)
 
 
 def get_ticker_returns(ticker, db):
     q = """
-        SELECT * 
+        SELECT price_ret, return_date
         FROM <TBL:daily_constituent_returns> 
         WHERE ticker = {_ticker}
     """
     p = {"_ticker": ticker}
     df = read_select(db, q, p)
-    return df
+    if df.shape[0] > 0:
+        index = pd.DatetimeIndex(df["return_date"])
+        df.index = index
+        del df["return_date"]
+        return df["price_ret"].astype(float)
+    else:
+        return None
 
 
 def get_portfolio_returns(portfolio_name, db):

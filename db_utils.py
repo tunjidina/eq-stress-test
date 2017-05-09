@@ -121,11 +121,6 @@ def setup_db_tables(drop_pre_init=False):
             date date,
             beta numeric
         );
-        
-        CREATE TABLE stress_scenarios (
-            scenario_name varchar (20),
-            market_up_down varchar ()
-        );
     """
     execute_sql(db_engine, q)
 
@@ -144,12 +139,19 @@ def insert_temp_price_table(db, tbl_name, price_tbl, debug=True):
     execute_sql(db, q, p, debug)
 
 
-def insert_temp_ret_table(db, temptbl_name, returns_tbl, debug=True):
-    q = """
-        INSERT INTO <TBL:{_returns_tbl}> (ticker, return_date, price_ret)
-        SELECT ticker, return_date, price_ret
-        FROM <TBL:{_temptbl_name}>
-    """
+def insert_temp_ret_table(db, temptbl_name, returns_tbl, is_pf=False, debug=True):
+    if is_pf:
+        q = """
+            INSERT INTO <TBL:portfolio_returns> (return_date, price_ret, portfolio_name)
+            SELECT return_date, price_ret, portfolio_name
+            FROM <TBL:{_temptbl_name}>
+        """
+    else:
+        q = """
+            INSERT INTO <TBL:{_returns_tbl}> (ticker, return_date, price_ret)
+            SELECT ticker, return_date, price_ret
+            FROM <TBL:{_temptbl_name}>
+        """
     p = {
         "_returns_tbl": returns_tbl,
         "_temptbl_name": temptbl_name

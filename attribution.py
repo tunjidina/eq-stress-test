@@ -113,5 +113,11 @@ def get_portfolio_returns(portfolio_name, db):
         where portfolio_name = {_portfolio_name}
     """
     p = {"_portfolio_name": portfolio_name}
-    portfolio_returns = read_select(db, q, p)
-    return portfolio_returns
+    df = read_select(db, q, p)
+    if df.shape[0] > 0:
+        index = pd.DatetimeIndex(df["return_date"])
+        df.index = index
+        del df["return_date"]
+        df["price_ret"] = df["price_ret"].astype(float)
+        return df
+    return df

@@ -11,6 +11,7 @@ from download import load_prices
 from attribution import calc_daily_constituent_returns,\
                         calc_daily_portfolio_returns
 from weights import insert_weights
+from risk import StressTest
 
 
 class Benchmark:
@@ -56,14 +57,7 @@ class Portfolio:
         calc_daily_constituent_returns(self.constituents, self.db)
         calc_daily_portfolio_returns(self.portfolio_name, self.db)
 
-    def calc_portfolio_beta(self):
-        pass
-
-    def generate_report(self):
-        pass
-
     def run(self):
         self.load_weights()
-        self.load_prices()
+        self.download_prices()
         self.calc_returns()
-        self.calc_portfolio_beta()

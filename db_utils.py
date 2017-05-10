@@ -113,7 +113,7 @@ def setup_db_tables(drop_pre_init=False):
         CREATE TABLE portfolio_returns (
             portfolio_name varchar (10),
             return_date date,
-            pf_ret numeric
+            price_ret numeric
         );
         
         CREATE TABLE portfolio_beta (
@@ -232,3 +232,12 @@ def get_temptable():
     :return: temptable name
     """
     return "temp_" + datetime.now().strftime("%m%s")
+
+
+def delete_existing_portfolio_returns(portfolio_name, db):
+    q = """
+        DELETE FROM <TBL:portfolio_returns>
+        WHERE portfolio_name = {_pf_name}
+    """
+    p = {"_pf_name": portfolio_name}
+    execute_sql(db, q, p)

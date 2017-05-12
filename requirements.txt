@@ -4,3 +4,4 @@ pandas==0.18.1
 pandas-datareader==0.3.0.post0
 psycopg2==2.6.1
 SQLAlchemy==1.0.12
+seaborn==0.7.1

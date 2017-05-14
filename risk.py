@@ -70,14 +70,18 @@ class StressTest:
             .corr(self.agg_df["bench_ret"])
 
     def gen_visuals(self):
-        self.pos_breakdown_image_url = vis.pos_breakdown(self.pf.weights)
+        longs_path, shorts_path = vis.pos_breakdown(self.pf.weights)
+        self.longs_breakdown_image_url = longs_path
+        self.shorts_breakdown_image_url = shorts_path
+
         self.cumulative_returns_image_url = vis.cumulative_returns(self.agg_df)
         self.scenario_returns_image_url = vis.scenario_returns(self.scenario_df, self.beta, self.benchmark.ticker)
         self.correlation_chart_image_url = vis.correlation_chart(self.rolling_corr)
 
         self.template_opts = {
             "visuals": {
-                "pos_breakdown_image_url": self.pos_breakdown_image_url,
+                "longs_breakdown_image_url": self.longs_breakdown_image_url,
+                "shorts_breakdown_image_url": self.shorts_breakdown_image_url,
                 "cumulative_returns_image_url": self.cumulative_returns_image_url,
                 "scenario_returns_image_url": self.scenario_returns_image_url,
                 "correlation_chart_image_url": self.correlation_chart_image_url
@@ -85,6 +89,7 @@ class StressTest:
         }
     def render_report(self):
         render_report(self.template_name, self.target_path, self.template_opts)
+        print("Report is available at: {}".format(self.target_path))
 
     def run(self):
         self.run_test()

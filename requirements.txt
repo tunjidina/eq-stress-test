@@ -6,3 +6,4 @@ psycopg2==2.6.1
 SQLAlchemy==1.0.12
 seaborn==0.7.1
 matplotlib==1.5.3
+scipy==0.18.1

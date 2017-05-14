@@ -68,7 +68,6 @@ def calc_daily_portfolio_returns(portfolio_name, db):
     adj_returns = {}
     for ticker in constituents:
         # _ calculate return contribution for each constituent
-        print(ticker)
         _ticker_return = get_ticker_returns(ticker, db)
         _ticker_weight = get_single_ticker_weight(portfolio_name, ticker, db)
         if (_ticker_return is not None and _ticker_weight is not None):
@@ -109,7 +108,7 @@ def get_ticker_returns(ticker, db):
         del df["return_date"]
         return df["price_ret"].astype(float)
     else:
-        return None
+        return df
 
 
 def get_portfolio_returns(portfolio_name, db):

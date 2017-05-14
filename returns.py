@@ -9,16 +9,20 @@ from datetime import datetime
 import pandas as pd
 from pandas import DataFrame
 import numpy as np
+from db_utils import get_engine
 
 
 class Portfolio:
     """
     """
-    def __init__(self):
+    def __init__(self, weights_path, history, conn_str=None):
         """
+        :param weights_path: 
+        :param history: 
+        :param conn_str: SQLAlchemy connection str 
         """
-        self.root_ticker_path = "/Users/frank/Desktop/job search/2017/april/artisan partners/dev/"
-        self.prices_path = os.path.join(self.root_ticker_path, "prices")
+        # _ db will be a filesystem basaed db if no params are given
+        self.db = get_engine()
         self.weights = self.load_weights()
         self.constituents = self.load_manifest()
         self.start_date = datetime(2017,4,21)
@@ -31,6 +35,7 @@ class Portfolio:
         print("Loading portfolio weights")
         self.weights = pd.read_csv(self.root_ticker_path + "weights")
         self.weights = self.weights.ticker
+
     def load_manifest(self):
         """
         """

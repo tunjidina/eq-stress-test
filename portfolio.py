@@ -11,7 +11,6 @@ from download import load_prices
 from attribution import calc_daily_constituent_returns,\
                         calc_daily_portfolio_returns
 from weights import insert_weights
-from risk import StressTest
 
 
 class Benchmark:
@@ -46,6 +45,7 @@ class Portfolio:
         drop_temp_table(self.db, tmptbl)
 
         # _ store weights on class for convenience
+        weights.index = weights["ticker"]
         self.weights = weights
         self.constituents = weights.ticker.tolist()
 

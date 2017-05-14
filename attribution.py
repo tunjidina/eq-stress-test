@@ -53,6 +53,12 @@ def calc_daily_constituent_returns(tickers, db):
 
 
 def calc_daily_portfolio_returns(portfolio_name, db):
+
+    existing_returns = get_portfolio_returns(portfolio_name, db)
+    if existing_returns.shape[0] > 0:
+        print("returns already exists for {}".format(portfolio_name))
+        return
+
     # _ get constituent weights
     weights = get_portfolio_weights(portfolio_name, db)
 

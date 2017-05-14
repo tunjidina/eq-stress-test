@@ -21,6 +21,8 @@ Then install the remaining requirements
 
 `pip install -r requirements.txt`
 
+For further dependency issues please see: http://stackoverflow.com/questions/35472693/how-to-get-matplotlib-pyplot-working-in-virtual-environment-on-osx
+
 ----
 
 #### How to run

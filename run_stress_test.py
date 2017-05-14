@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
-from returns import Portfolio, StressTest
+from portfolio import Portfolio
+from risk import StressTest
 
 def parse_args():
     """
@@ -22,9 +23,9 @@ def run_stress_test():
 
     pf = Portfolio(portfolio_name, weights_path)
 
+    pf.load_weights()
+    pf.download_prices()
     pf.calc_returns()
-    pf.calc_benchmark_returns()
-    pf.calc_beta()
 
     template_path = args.template_path
     target_path = args.report_target_path

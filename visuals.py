@@ -3,28 +3,55 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-def pos_breakdown(weight_df, path="./images/pos_breakdown.png"):
-    f, (ax1, ax2) = plt.subplots(1, 2)
-    weight_df[weight_df.weight > 0]["weight"].sort_values() \
-        .plot(kind="pie",
-              figsize=(35, 17.5),
-              autopct='%.2f',
-              ax=ax1,
-              colors=sns.color_palette("Blues"),
-              fontsize=20)
-    ax1.set_title("Longs", fontsize=40)
-    (weight_df[weight_df.weight < 0] * -1)["weight"].sort_values() \
-        .plot(kind="pie",
-              figsize=(35, 17.5),
-              autopct='(%.2f)', ax=ax2,
-              colors=sns.color_palette("Blues"),
-              fontsize=20)
-    ax2.set_title("Shorts", fontsize=40)
-    f.savefig(path)
+def gen_pie_plot(df, weight_col, colormap="Blues",
+                 figsize=(15, 15), float_fmt="%.2f",
+                 fontsize=20, title=None, save_figure=False, path="./pie_chart", use_cubehelix=False):
+    f, ax = plt.subplots()
+    if use_cubehelix:
+        cm = sns.cubehelix_palette(n_colors=df.shape[0],
+                                   start=.8,
+                                   rot=.4,
+                                   gamma=.4,
+                                   hue=5, reverse=True)
+    else:
+        cm = sns.color_palette(colormap)
+    df[weight_col].sort_values().plot(kind="pie", figsize=figsize,
+                        autopct=float_fmt, ax=ax,
+                        colors=cm, fontsize=fontsize)
+    ax.set_title(title)
+    if save_figure and path is not None:
+        try:
+            f.savefig(path)
+        except(e):
+            print("Could not save pie chart")
+            print(e)
 
-    # _ send only the filename
-    filename = os.path.basename(path)
-    return filename
+
+def pos_breakdown(weight_df, path="./images/pos_breakdown_{}.png"):
+    # _ init paths
+    longs_path, shorts_path = (None, None)
+
+    # _ decide whether or not there are shorts
+    shorts = weight_df[weight_df.weight < 0]
+    shorts.loc[:, "weight"] = shorts.weight * -1
+
+    longs = weight_df[weight_df.weight > 0]
+
+    if shorts.shape[0] > 0:
+        shorts_path = path.format("shorts")
+        gen_pie_plot(shorts, weight_col="weight", use_cubehelix=True,
+                     title="Shorts", path=shorts_path, save_figure=True)
+        # _ only send back the filename for the templates
+        shorts_path = os.path.basename(shorts_path)
+
+    if longs.shape[0] > 0:
+        longs_path = path.format("longs")
+        gen_pie_plot(longs, weight_col="weight", use_cubehelix=True,
+                     title="Longs", path=longs_path, save_figure=True)
+        # _ only send back the filename for the templates
+        longs_path = os.path.basename(longs_path)
+
+    return (longs_path, shorts_path)
 
 
 def cumulative_returns(agg_df, path="./images/cum_returns.png"):
@@ -67,3 +94,9 @@ def correlation_chart(cor_df, path="./images/rolling_corr.png"):
     filename = os.path.basename(path)
     return filename
 
+
+def single_pie(weight_df):
+    f, ax = plt.subplots()
+    weight_df["weight"].plot(kind="pie", figsize=(15,15), autopct="%.2f",
+                   ax=ax, colors=sns.color_palette("Reds"),
+                   fontsize=20)

@@ -26,8 +26,7 @@ For further dependency issues please see: http://stackoverflow.com/questions/354
 _in case matplotlib is still throwing errors, it is suggested to install requirements in an environment where matplotlib is functioning properly_
 
 Also if it is desired to output the html into a pdf, we need to download [wkhtmltopdf](https://wkhtmltopdf.org/downloads.html)
-
-then run `wkhtmltopdf --orientation Landscape stress_test_rpt_output.html ~/<desired_path>/a.pdf` 
+ 
 ----
 
 #### How to run
@@ -41,3 +40,6 @@ ticker,weight
 ticker1,.8
 ticker2,.2
 ```
+
+if pdf version of the report is needed run `wkhtmltopdf --orientation Portrait stress_test_rpt_output.html ~/<desired_path>/a.pdf`
+

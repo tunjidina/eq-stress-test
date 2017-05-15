@@ -5,7 +5,7 @@ This project will read the weights file for constituents (.csv), download histor
 
 Once daily return series are obtained, a [portfolio beta](http://www.investopedia.com/terms/b/beta.asp) is calculated and used for stress testing.
 
-Results are currently outputted to a styled webpage which is then converted to a pdf.
+Results are currently outputted to a styled web page which can also be converted to a pdf (via wkhtmltopdf).
 
 -----
 
@@ -23,6 +23,11 @@ Then install the remaining requirements
 
 For further dependency issues please see: http://stackoverflow.com/questions/35472693/how-to-get-matplotlib-pyplot-working-in-virtual-environment-on-osx
 
+_in case matplotlib is still throwing errors, it is suggested to install requirements in an environment where matplotlib is functioning properly_
+
+Also if it is desired to output the html into a pdf, we need to download [wkhtmltopdf](https://wkhtmltopdf.org/downloads.html)
+
+then run `wkhtmltopdf --orientation Landscape stress_test_rpt_output.html ~/<desired_path>/a.pdf` 
 ----
 
 #### How to run

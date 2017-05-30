@@ -43,3 +43,21 @@ ticker2,.2
 
 if pdf version of the report is needed run `wkhtmltopdf --orientation Portrait stress_test_rpt_output.html ~/<desired_path>/a.pdf`
 
+----
+
+Here's how the visuals would look like:
+ 
+ ##### Positions Breakdown (Longs)
+ ![alt_text](./images/pos_breakdown_longs.png)
+ 
+ ##### Positions Breakdown (Shorts)
+ ![alt_text](./images/pos_breakdown_shorts.png)
+ 
+ ##### Cumulative Returns
+ ![alt_text](./images/cum_returns.png)
+ 
+ ##### Rolling Correlations
+ ![alt_text](./images/rolling_corr.png)
+ 
+ ##### Scenario Returns
+ ![alt_text](./images/scenario_returns.png)
